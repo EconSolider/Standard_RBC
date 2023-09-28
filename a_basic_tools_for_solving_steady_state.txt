@@ -1,0 +1,86 @@
+modファイル:
+
+%-------------------------変数名とlatex表示を設定------------------------------------------------
+var
+y ${Y}$ (long_name='output')
+........
+;
+
+%-----------------------補助変数名(local_variable:限界生産と限界効用)を設定---------------------------
+model_local_variable
+uc ${U_t^C}$
+....
+;
+
+%--------------------外生変数名を設定---------------------------------
+varexo
+varexo
+epsa ${\varepsilon^A}$ (long_name='Productivity Shock')
+;
+
+%-----------------パラメーター名を設定-------------------------------
+parameters
+beta ${\beta}$ (long_name='Discount Factor')
+..........
+;
+
+%-----------------------パラメーター値を設定-------------------------------
+alpha=0.65;
+beta=0.99;
+.....;
+
+%-------------------------モデルを入力------------------------------------
+model;
+ #uc=gamma*c^(-etac);    %補助変数定義式の前に'#'が必要
+[name='Euler equation']  %主要方程式に名前を付ける。
+uc=beta*ucp*(1-delta+r);
+[name='labor supply']
+w=-ul/uc;
+....
+end;                     %model_blockにend;が必要
+
+
+%変数、パラメーター、一階条件のlatexファイルを作成、確認。
+write_latex_definitions;
+write_latex_parameter_table;
+write_latex_original_model;
+%write_latex_dynamic_model;
+write_latex_static_model;
+collect_latex_files;
+
+%----------定常状態----------------------------------------
+
+%(a)解析でsteady_stateを求める方法:
+steady_state_model;
+
+%一般的な求め方
+r=1/beta+delta-1;
+
+%dynareはm関数で非線形方程式の解を求めることができる
+l=steady_state_helper(l0,pssi,c_l,gamma,etac,etal,w); 
+......
+end;                        %endで閉じる必要がある.
+steady;                     %定常値を求める(解析)
+%tip:すべての変数を労働で割って一人当たりの定常値を求める方が簡単。
+
+
+
+%(b)数値的にsteady_stateを求める方法
+(初期値を設定する時は変数の大小関係に注意)
+intval;
+y=0.9;
+.....
+end;                     %endで閉じる必要がある.
+steady;                  %定常値を求める(数値)
+
+%-------------------------------------------------------------------
+%--------------------------------------------------------------------
+定常値を求めるm関数:
+function l=steady_state_helper(l0,psi,c_l,gamma,etac,etal,w)
+options=optimset('Display','off','TolX',1e-10);
+l=fsolve(@(l) psi*(1-l)^(-etal)-gamma*c_l^(-etac)*l^(-etac) * w,l0,options);
+end
+
+
+
+
